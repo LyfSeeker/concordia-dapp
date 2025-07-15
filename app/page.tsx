@@ -64,37 +64,7 @@ export default function HomePage() {
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <svg width="32" height="32" viewBox="0 0 32 32" className="relative z-10">
-                  <defs>
-                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#F042FF" />
-                      <stop offset="50%" stopColor="#7226FF" />
-                      <stop offset="100%" stopColor="#160078" />
-                    </linearGradient>
-                  </defs>
-                  {/* Outer ring representing unity */}
-                  <circle
-                    cx="16"
-                    cy="16"
-                    r="15"
-                    fill="none"
-                    stroke="url(#logoGradient)"
-                    strokeWidth="2"
-                    opacity="0.6"
-                  />
-                  {/* Inner connected nodes representing friends */}
-                  <circle cx="16" cy="8" r="3" fill="#F042FF" />
-                  <circle cx="24" cy="16" r="3" fill="#7226FF" />
-                  <circle cx="16" cy="24" r="3" fill="#F042FF" />
-                  <circle cx="8" cy="16" r="3" fill="#7226FF" />
-                  {/* Connection lines */}
-                  <line x1="16" y1="8" x2="24" y2="16" stroke="url(#logoGradient)" strokeWidth="1.5" opacity="0.8" />
-                  <line x1="24" y1="16" x2="16" y2="24" stroke="url(#logoGradient)" strokeWidth="1.5" opacity="0.8" />
-                  <line x1="16" y1="24" x2="8" y2="16" stroke="url(#logoGradient)" strokeWidth="1.5" opacity="0.8" />
-                  <line x1="8" y1="16" x2="16" y2="8" stroke="url(#logoGradient)" strokeWidth="1.5" opacity="0.8" />
-                  {/* Center node representing the goal */}
-                  <circle cx="16" cy="16" r="2" fill="#F042FF" />
-                </svg>
+                <img src="/concordia-logo.png" alt="Concordia Logo" width={48} height={48} className="relative z-10 rounded-full" />
                 {/* Subtle glow effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-[#F042FF]/20 to-[#7226FF]/20 rounded-full blur-sm -z-10"></div>
               </div>
@@ -370,69 +340,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-3 mb-4">
                 <div className="relative">
-                  <svg width="32" height="32" viewBox="0 0 32 32" className="relative z-10">
-                    <defs>
-                      <linearGradient id="footerLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#F042FF" />
-                        <stop offset="50%" stopColor="#7226FF" />
-                        <stop offset="100%" stopColor="#160078" />
-                      </linearGradient>
-                    </defs>
-                    {/* Outer ring representing unity */}
-                    <circle
-                      cx="16"
-                      cy="16"
-                      r="15"
-                      fill="none"
-                      stroke="url(#footerLogoGradient)"
-                      strokeWidth="2"
-                      opacity="0.6"
-                    />
-                    {/* Inner connected nodes representing friends */}
-                    <circle cx="16" cy="8" r="3" fill="#F042FF" />
-                    <circle cx="24" cy="16" r="3" fill="#7226FF" />
-                    <circle cx="16" cy="24" r="3" fill="#F042FF" />
-                    <circle cx="8" cy="16" r="3" fill="#7226FF" />
-                    {/* Connection lines */}
-                    <line
-                      x1="16"
-                      y1="8"
-                      x2="24"
-                      y2="16"
-                      stroke="url(#footerLogoGradient)"
-                      strokeWidth="1.5"
-                      opacity="0.8"
-                    />
-                    <line
-                      x1="24"
-                      y1="16"
-                      x2="16"
-                      y2="24"
-                      stroke="url(#footerLogoGradient)"
-                      strokeWidth="1.5"
-                      opacity="0.8"
-                    />
-                    <line
-                      x1="16"
-                      y1="24"
-                      x2="8"
-                      y2="16"
-                      stroke="url(#footerLogoGradient)"
-                      strokeWidth="1.5"
-                      opacity="0.8"
-                    />
-                    <line
-                      x1="8"
-                      y1="16"
-                      x2="16"
-                      y2="8"
-                      stroke="url(#footerLogoGradient)"
-                      strokeWidth="1.5"
-                      opacity="0.8"
-                    />
-                    {/* Center node representing the goal */}
-                    <circle cx="16" cy="16" r="2" fill="#F042FF" />
-                  </svg>
+                  <img src="/concordia-logo.png" alt="Concordia Logo" width={40} height={40} className="relative z-10 rounded-full" />
                   {/* Subtle glow effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-[#F042FF]/20 to-[#7226FF]/20 rounded-full blur-sm -z-10"></div>
                 </div>
