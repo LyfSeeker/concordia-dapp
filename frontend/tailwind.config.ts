@@ -3,11 +3,10 @@ import type { Config } from "tailwindcss"
 const config: Config = {
   darkMode: ["class"],
   content: [
+    "./app/**/*.{ts,tsx}",
     "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
-    "*.{js,ts,jsx,tsx,mdx}",
   ],
   prefix: "",
   theme: {
@@ -54,7 +53,7 @@ const config: Config = {
           foreground: "hsl(var(--card-foreground))",
         },
         concordia: {
-          "dark-blue": "#010030",
+          "dark-blue": "#000000",
           purple: "#160078",
           pink: "#F042FF",
           "light-purple": "#7226FF",
@@ -75,14 +74,23 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        twinkle: {
+          "0%, 100%": { opacity: "0", transform: "scale(0.5)" },
+          "50%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        twinkle: "twinkle ease-in-out infinite",
+      },
+      fontFamily: {
+        sans: ["var(--font-inter)"],
+        orbitron: ["var(--font-orbitron)"],
       },
     },
   },
   plugins: [require("tailwindcss-animate")],
-} satisfies Config
+}
 
 export default config
