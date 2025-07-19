@@ -5,153 +5,86 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Users, Lock, Trophy, Target, ArrowRight, Wallet, ChevronDown, Plus } from "lucide-react"
+import { Users, Lock, Trophy, Target, ArrowRight, Wallet, ChevronDown, Plus, Menu, X } from "lucide-react"
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi"
 import { opBNBTestnet } from "wagmi/chains"
 import { GroupDashboard, type SavingsGroup } from "@/components/group-dashboard"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SparkleBackground } from "@/components/sparkle-background"
-import { useRouter, useSearchParams } from "next/navigation" // Import useRouter and useSearchParams
-
-function WalletConnection() {
-  const { address, isConnected, chainId } = useAccount()
-  const { connect, connectors, error, isPending } = useConnect()
-  const { disconnect } = useDisconnect()
-  const { switchChain } = useSwitchChain()
-
-  const requiredChainId = opBNBTestnet.id
-  const isWrongNetwork = isConnected && chainId !== requiredChainId
-
-  const handleConnect = () => {
-    try {
-      const metaMaskConnector = connectors.find((connector) => connector.name === "MetaMask")
-
-      if (metaMaskConnector) {
-        connect({ connector: metaMaskConnector })
-      } else {
-        console.warn("MetaMask connector not found, attempting to connect with first available connector.")
-        if (connectors.length > 0) {
-          connect({ connector: connectors[0] })
-        } else {
-          console.error("No connectors available.")
-        }
-      }
-    } catch (err) {
-      console.error("Failed to connect wallet:", err)
-    }
-  }
-
-  const handleDisconnect = () => {
-    disconnect()
-  }
-
-  if (isPending) {
-    return (
-      <Button disabled className="bg-gradient-to-r from-[#F042FF] to-[#7226FF] text-white font-semibold px-6 py-2">
-        {"Connecting..."}
-      </Button>
-    )
-  }
-
-  if (isWrongNetwork) {
-    return (
-      <div className="flex flex-col items-end space-y-2">
-        <Button
-          onClick={() => switchChain({ chainId: requiredChainId })}
-          className="bg-red-500 hover:bg-red-700 text-white font-semibold px-6 py-2"
-        >
-          <Wallet className="mr-2 h-4 w-4" />
-          {"Switch to opBNB Testnet"}
-        </Button>
-        <p className="text-red-400 text-xs max-w-xs text-right">{"Please switch to opBNB Testnet to continue."}</p>
-      </div>
-    )
-  }
-
-  if (isConnected && address) {
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className="border-concordia-light-purple text-concordia-light-purple hover:bg-concordia-light-purple/10 bg-transparent font-semibold"
-          >
-            <Wallet className="mr-2 h-4 w-4" />
-            {address.slice(0, 6) + "..." + address.slice(-4)}
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-concordia-dark-blue border-concordia-light-purple/30">
-          <DropdownMenuItem
-            onClick={() => navigator.clipboard.writeText(address)}
-            className="text-white hover:bg-concordia-light-purple/20 cursor-pointer"
-          >
-            {"Copy Address"}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => window.open("https://testnet.bscscan.com/address/" + address, "_blank")}
-            className="text-white hover:bg-concordia-light-purple/20 cursor-pointer"
-          >
-            {"View on Explorer"}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleDisconnect} className="text-red-400 hover:bg-red-400/20 cursor-pointer">
-            {"Disconnect"}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    )
-  }
-
-  return (
-    <div className="flex flex-col items-end space-y-2">
-      <Button
-        onClick={handleConnect}
-        className="bg-gradient-to-r from-[#F042FF] via-[#7226FF] to-[#F042FF] hover:from-[#F042FF]/90 hover:via-[#7226FF]/90 hover:to-[#F042FF]/90 text-white font-semibold px-6 py-2 shadow-md"
-      >
-        <Wallet className="mr-2 h-4 w-4" />
-        {"Connect MetaMask"}
-      </Button>
-      {error && <p className="text-red-400 text-xs max-w-xs text-right">{error.message}</p>}
-    </div>
-  )
-}
+import { useRouter, useSearchParams } from "next/navigation"
+import { WalletConnection } from "@/components/wallet-connection"
 
 export default function HomePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const initialTab = searchParams.get("tab") || "home" // Read tab from URL
-  const [activeTab, setActiveTab] = useState(initialTab)
+  const [activeTab, setActiveTab] = useState("home")
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const { isConnected, address } = useAccount()
   const [userGroups, setUserGroups] = useState<SavingsGroup[]>([])
 
-  // New state to track if the automatic redirect has already occurred
-  const [autoRedirectDone, setAutoRedirectDone] = useState(false)
-
-  // Auto-switch to dashboard when wallet connects
+  // Ensure we're on the client side
   useEffect(() => {
-    // Only redirect if connected AND auto-redirect hasn't happened yet
-    if (isConnected && !autoRedirectDone) {
-      // If currently on the home tab, perform the redirect
-      if (activeTab === "home") {
-        setTimeout(() => {
-          setActiveTab("dashboard")
-          setAutoRedirectDone(true) // Mark redirect as done
-        }, 500)
-      }
-    }
-    // If disconnected, reset the flag so it can redirect again on next connect
-    if (!isConnected) {
-      setAutoRedirectDone(false)
-    }
-  }, [isConnected, activeTab, autoRedirectDone])
+    setIsClient(true)
+  }, [])
 
-  // Update activeTab if URL param changes
+  // Update activeTab if URL param changes - handle hydration safely
   useEffect(() => {
     const tab = searchParams.get("tab")
     if (tab && tab !== activeTab) {
       setActiveTab(tab)
+    } else if (!tab && activeTab !== "home") {
+      setActiveTab("home")
     }
   }, [searchParams, activeTab])
+
+  // Handle new group data from create-group page - optimized
+  useEffect(() => {
+    // Only run after client-side hydration is complete
+    if (!isClient) return
+    
+    const newGroupData = searchParams.get("newGroup")
+    if (newGroupData) {
+      try {
+        const parsedData = JSON.parse(decodeURIComponent(newGroupData))
+        const now = Date.now()
+        const newMockGroup: SavingsGroup = {
+          id: String(now), // Use timestamp for unique ID
+          name: parsedData.name,
+          description: parsedData.description,
+          goal: parsedData.description,
+          targetAmount: parsedData.targetAmount,
+          currentAmount: parsedData.targetAmount / parsedData.numMembers,
+          contributionAmount: parsedData.targetAmount / parsedData.numMembers,
+          duration: parsedData.lockDuration + " days",
+          endDate: new Date(now + parsedData.lockDuration * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          nextContribution: new Date(
+            now + (parsedData.contributionFrequency === "weekly" ? 7 : 30) * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "active",
+          contributionFrequency: parsedData.contributionFrequency || "weekly",
+          lockDuration: parsedData.lockDuration || 30,
+          members: Array.from({ length: parsedData.numMembers }).map((_, i) => ({
+            address: i === 0 ? address || "0xYourAddress" : `0xMockMember${i + 1}`,
+            nickname: i === 0 ? "You" : `Member ${i + 1}`,
+            contributed: i === 0 ? parsedData.targetAmount / parsedData.numMembers : 0,
+            auraPoints: i === 0 ? 10 : 0,
+            status: i === 0 ? "active" : "pending",
+            hasApprovedWithdrawal: false,
+          })),
+          approvalStatus: parsedData.numMembers > 0 ? { [address || "0xYourAddress"]: false } : {},
+        }
+        setUserGroups((prevGroups) => [...prevGroups, newMockGroup])
+        // Clear the URL param after processing
+        router.replace("/?tab=dashboard", undefined)
+      } catch (error) {
+        console.error("Error parsing new group data:", error)
+        router.replace("/?tab=dashboard", undefined)
+      }
+    }
+  }, [searchParams, address, router, isClient]) // Added isClient dependency
 
   const features = [
     {
@@ -201,58 +134,13 @@ export default function HomePage() {
 
   const scrollToContribution = () => {
     if (isConnected) {
-      router.push("/create-group") // Navigate to new page
+      router.push("/create-group")
     } else {
       document.getElementById("connect-section")?.scrollIntoView({
         behavior: "smooth",
       })
     }
   }
-
-  // This function is now called from the new create-group page
-  // For mock data, we'll simulate adding a group here.
-  // In a real app, this would likely come from a database or contract event.
-  useEffect(() => {
-    const newGroupData = searchParams.get("newGroup")
-    if (newGroupData) {
-      try {
-        const parsedData = JSON.parse(decodeURIComponent(newGroupData))
-        const newMockGroup: SavingsGroup = {
-          id: String(userGroups.length + 1), // Simple ID generation
-          name: parsedData.name,
-          description: parsedData.description,
-          goal: parsedData.description,
-          targetAmount: parsedData.targetAmount,
-          currentAmount: parsedData.targetAmount / parsedData.numMembers,
-          contributionAmount: parsedData.targetAmount / parsedData.numMembers,
-          duration: parsedData.lockDuration + " days",
-          endDate: new Date(Date.now() + parsedData.lockDuration * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          nextContribution: new Date(
-            Date.now() + (parsedData.contributionFrequency === "weekly" ? 7 : 30) * 24 * 60 * 60 * 1000,
-          )
-            .toISOString()
-            .split("T")[0],
-          status: "active",
-          contributionFrequency: parsedData.contributionFrequency || "weekly",
-          lockDuration: parsedData.lockDuration || 30,
-          members: Array.from({ length: parsedData.numMembers }).map((_, i) => ({
-            address: i === 0 ? address || "0xYourAddress" : `0xMockMember${i + 1}`,
-            nickname: i === 0 ? "You" : `Member ${i + 1}`,
-            contributed: i === 0 ? parsedData.targetAmount / parsedData.numMembers : 0,
-            auraPoints: i === 0 ? 10 : 0,
-            status: i === 0 ? "active" : "pending",
-            hasApprovedWithdrawal: false,
-          })),
-          approvalStatus: parsedData.numMembers > 0 ? { [address || "0xYourAddress"]: false } : {},
-        }
-        setUserGroups((prevGroups) => [...prevGroups, newMockGroup])
-        // Clear the URL param after processing
-        router.replace("/", undefined) // Remove query param without full reload
-      } catch (e) {
-        console.error("Failed to parse new group data from URL:", e)
-      }
-    }
-  }, [searchParams, userGroups, address, router])
 
   const handleApproveWithdrawal = (groupId: string, memberAddress: string) => {
     setUserGroups((prevGroups) =>
@@ -274,10 +162,10 @@ export default function HomePage() {
     <div className="min-h-screen bg-concordia-dark-blue relative">
       <SparkleBackground />
       {/* Navigation */}
-      <nav className="border-b border-concordia-light-purple/20 bg-concordia-dark-blue/95 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="border-b border-concordia-light-purple/20 bg-concordia-dark-blue/95 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {/* New Logo */}
+            {/* Optimized Logo */}
             <div className="relative">
               <svg
                 width="40"
@@ -292,37 +180,17 @@ export default function HomePage() {
                     <stop offset="0%" stopColor="#F042FF" />
                     <stop offset="100%" stopColor="#7226FF" />
                   </linearGradient>
-                  <filter id="glowNew">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                    <feMerge>
-                      <feMergeNode in="coloredBlur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
                 </defs>
-                {/* Main "C" shape - abstract and interconnected */}
-                <path
-                  d="M20 2C11.1634 2 4 9.16344 4 18C4 26.8366 11.1634 34 20 34C28.8366 34 36 26.8366 36 18C36 9.16344 28.8366 2 20 2ZM20 6C26.6274 6 32 11.3726 32 18C32 24.6274 26.6274 30 20 30C13.3726 30 8 24.6274 8 18C8 11.3726 13.3726 6 20 6Z"
-                  fill="url(#logoGradientNew)"
-                  opacity="0.1"
-                />
+                {/* Simplified "C" shape */}
                 <path
                   d="M20 10C14.4772 10 10 14.4772 10 20C10 25.5228 14.4772 30 20 30C25.5228 30 30 25.5228 30 20C30 14.4772 25.5228 10 20 10ZM20 14C23.3137 14 26 16.6863 26 20C26 23.3137 23.3137 26 20 26C16.6863 26 14 23.3137 14 20C14 16.6863 16.6863 14 20 14Z"
                   fill="url(#logoGradientNew)"
-                  opacity="0.2"
+                  opacity="0.8"
                 />
-                {/* Interlocking elements */}
-                <path
-                  d="M20 10 L20 14 M20 26 L20 30 M10 20 L14 20 M26 20 L30 20"
-                  stroke="url(#logoGradientNew)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  opacity="0.6"
-                />
-                <circle cx="20" cy="20" r="4" fill="url(#logoGradientNew)" filter="url(#glowNew)" />
-                <circle cx="20" cy="20" r="2" fill="white" />
+                <circle cx="20" cy="20" r="3" fill="url(#logoGradientNew)" />
+                <circle cx="20" cy="20" r="1.5" fill="white" />
               </svg>
-              <div className="absolute inset-0 bg-gradient-to-r from-concordia-pink/30 to-concordia-light-purple/30 rounded-lg blur-md -z-10"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-concordia-pink/20 to-concordia-light-purple/20 rounded-lg blur-sm -z-10"></div>
             </div>
             <span className="text-white font-orbitron font-bold text-2xl tracking-wider uppercase">CONCORDIA</span>
           </div>
@@ -330,7 +198,10 @@ export default function HomePage() {
           {/* Navigation Tabs */}
           <div className="hidden md:flex items-center space-x-8">
             <button
-              onClick={() => setActiveTab("home")}
+              onClick={() => {
+                setActiveTab("home")
+                router.push("/?tab=home", undefined)
+              }}
               className={
                 "font-medium transition-colors " +
                 (activeTab === "home" ? "text-concordia-pink" : "text-white/80 hover:text-concordia-pink")
@@ -338,34 +209,103 @@ export default function HomePage() {
             >
               {"Home"}
             </button>
-            {isConnected && (
-              <button
-                onClick={() => setActiveTab("dashboard")}
-                className={
-                  "font-medium transition-colors " +
-                  (activeTab === "dashboard" ? "text-concordia-pink" : "text-white/80 hover:text-concordia-pink")
+            <button
+              onClick={() => {
+                if (isConnected) {
+                  setActiveTab("dashboard")
+                  router.push("/?tab=dashboard", undefined)
                 }
-              >
-                {"Dashboard"}
-              </button>
-            )}
-            {isConnected && (
-              <button
-                onClick={() => router.push("/create-group")} // Navigate to new page
-                className={
-                  "font-medium transition-colors " +
-                  (activeTab === "create" ? "text-concordia-pink" : "text-white/80 hover:text-concordia-pink")
-                }
-              >
-                {"Create Group"}
-              </button>
-            )}
+              }}
+              className={
+                "font-medium transition-colors " +
+                (activeTab === "dashboard" ? "text-concordia-pink" : "text-white/80 hover:text-concordia-pink") +
+                (!isConnected ? " opacity-50 cursor-not-allowed" : "")
+              }
+              title={!isConnected ? "Connect wallet to access dashboard" : ""}
+            >
+              {"Dashboard"}
+            </button>
+            <button
+              onClick={() => isConnected ? router.push("/create-group") : null}
+              className={
+                "font-medium transition-colors " +
+                "text-white/80 hover:text-concordia-pink" +
+                (!isConnected ? " opacity-50 cursor-not-allowed" : "")
+              }
+              title={!isConnected ? "Connect wallet to create a group" : ""}
+            >
+              {"Create Group"}
+            </button>
           </div>
 
           <div className="flex items-center space-x-4">
             <WalletConnection />
+            
+            {/* Mobile menu button */}
+            {isClient && (
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 text-white hover:text-concordia-pink transition-colors"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            )}
           </div>
         </div>
+        
+        {/* Mobile Navigation Menu */}
+        {isClient && mobileMenuOpen && (
+          <div className="md:hidden border-t border-concordia-light-purple/20 bg-concordia-dark-blue/95">
+            <div className="px-4 py-4 space-y-3">
+              <button
+                onClick={() => {
+                  setActiveTab("home")
+                  router.push("/?tab=home", undefined)
+                  setMobileMenuOpen(false)
+                }}
+                className={
+                  "block w-full text-left py-2 px-3 rounded-lg transition-colors " +
+                  (activeTab === "home" ? "text-concordia-pink bg-concordia-pink/10" : "text-white/80 hover:text-concordia-pink hover:bg-concordia-pink/10")
+                }
+              >
+                {"Home"}
+              </button>
+              <button
+                onClick={() => {
+                  if (isConnected) {
+                    setActiveTab("dashboard")
+                    router.push("/?tab=dashboard", undefined)
+                    setMobileMenuOpen(false)
+                  }
+                }}
+                className={
+                  "block w-full text-left py-2 px-3 rounded-lg transition-colors " +
+                  (activeTab === "dashboard" ? "text-concordia-pink bg-concordia-pink/10" : "text-white/80 hover:text-concordia-pink hover:bg-concordia-pink/10") +
+                  (!isConnected ? " opacity-50 cursor-not-allowed" : "")
+                }
+                title={!isConnected ? "Connect wallet to access dashboard" : ""}
+              >
+                {"Dashboard"}
+              </button>
+              <button
+                onClick={() => {
+                  if (isConnected) {
+                    router.push("/create-group")
+                    setMobileMenuOpen(false)
+                  }
+                }}
+                className={
+                  "block w-full text-left py-2 px-3 rounded-lg transition-colors " +
+                  "text-white/80 hover:text-concordia-pink hover:bg-concordia-pink/10" +
+                  (!isConnected ? " opacity-50 cursor-not-allowed" : "")
+                }
+                title={!isConnected ? "Connect wallet to create a group" : ""}
+              >
+                {"Create Group"}
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
@@ -401,7 +341,10 @@ export default function HomePage() {
                     <Button
                       size="lg"
                       variant="outline"
-                      onClick={() => setActiveTab("dashboard")}
+                      onClick={() => {
+                        setActiveTab("dashboard")
+                        router.push("/?tab=dashboard", undefined)
+                      }}
                       className="border-concordia-light-purple text-concordia-light-purple hover:bg-concordia-light-purple/10 px-8 py-6 text-lg bg-transparent font-semibold"
                     >
                       {"View Dashboard"}
@@ -513,24 +456,6 @@ export default function HomePage() {
           <TabsContent value="dashboard">
             <GroupDashboard groups={userGroups} onApproveWithdrawal={handleApproveWithdrawal} />
           </TabsContent>
-
-          {/* The 'create' tab content is now handled by the modal */}
-          <TabsContent value="create" id="create-group-section">
-            <section className="py-20 text-center">
-              <h2 className="text-4xl font-bold text-white mb-4">{"Create Your Savings Group"}</h2>
-              <p className="text-white/80 text-lg mb-8">
-                {"Click the button below to start the group creation process."}
-              </p>
-              <Button
-                size="lg"
-                onClick={() => router.push("/create-group")}
-                className="bg-gradient-to-r from-concordia-pink to-concordia-light-purple hover:from-concordia-pink/80 hover:to-concordia-light-purple/80 text-white"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                {"Open Group Creation Form"}
-              </Button>
-            </section>
-          </TabsContent>
         </Tabs>
       </div>
       {/* Footer */}
@@ -585,7 +510,10 @@ export default function HomePage() {
               <h4 className="text-white font-semibold mb-4">{"Product"}</h4>
               <div className="space-y-2">
                 <button
-                  onClick={() => setActiveTab("home")}
+                  onClick={() => {
+                    setActiveTab("home")
+                    router.push("/?tab=home", undefined)
+                  }}
                   className="block text-white/70 hover:text-concordia-pink transition-colors"
                 >
                   {"Features"}
@@ -597,7 +525,12 @@ export default function HomePage() {
                   {"Create Group"}
                 </button>
                 <button
-                  onClick={() => setActiveTab("dashboard")}
+                  onClick={() => {
+                    if (isConnected) {
+                      setActiveTab("dashboard")
+                      router.push("/?tab=dashboard", undefined)
+                    }
+                  }}
                   className="block text-white/70 hover:text-concordia-pink transition-colors"
                 >
                   {"Dashboard"}

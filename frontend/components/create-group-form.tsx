@@ -25,6 +25,7 @@ interface CreateGroupFormProps {
 
 export function CreateGroupForm({ onGroupCreated }: CreateGroupFormProps) {
   const [step, setStep] = useState(1)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     groupName: "",
     groupDescription: "",
@@ -37,19 +38,22 @@ export function CreateGroupForm({ onGroupCreated }: CreateGroupFormProps) {
   const totalSteps = 4
 
   const handleNext = () => {
+    setError(null) // Clear any previous errors
+    
     // Basic validation for current step before moving to next
     if (step === 1 && (!formData.groupName || !formData.groupDescription)) {
-      alert("Please fill in group name and description.")
+      setError("Please fill in group name and description.")
       return
     }
     if (step === 2 && (Number(formData.targetAmount) <= 0 || formData.numMembers < 2 || formData.numMembers > 10)) {
-      alert("Please enter a valid target amount and number of members (2-10).")
+      setError("Please enter a valid target amount and number of members (2-10).")
       return
     }
     setStep((prev) => prev + 1)
   }
 
   const handleBack = () => {
+    setError(null) // Clear errors when going back
     setStep((prev) => prev - 1)
   }
 
@@ -73,6 +77,7 @@ export function CreateGroupForm({ onGroupCreated }: CreateGroupFormProps) {
     })
     // Reset form after successful creation
     setStep(1)
+    setError(null)
     setFormData({
       groupName: "",
       groupDescription: "",
@@ -93,6 +98,13 @@ export function CreateGroupForm({ onGroupCreated }: CreateGroupFormProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <Progress value={(step / totalSteps) * 100} className="w-full h-2 bg-concordia-light-purple/20 mb-4" />
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
+            <p className="text-red-400 text-sm break-words leading-tight">{error}</p>
+          </div>
+        )}
 
         <div className="grid gap-4 py-4">
           {step === 1 && (

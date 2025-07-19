@@ -6,7 +6,7 @@ import { parseEther } from "viem"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, CheckCircle, AlertCircle, ExternalLink } from "lucide-react"
+import { Loader2, CheckCircle, AlertCircle, ExternalLink, ChevronDown, ChevronUp } from "lucide-react"
 
 // Mock contract ABI - replace with your actual contract ABI
 const CONCORDIA_CONTRACT_ABI = [
@@ -50,6 +50,7 @@ export function SmartContractIntegration({ contributionAmount, duration, onSucce
   const { address } = useAccount()
   const [isCreating, setIsCreating] = useState(false)
   const [txHash, setTxHash] = useState<string>("")
+  const [showErrorDetails, setShowErrorDetails] = useState(false)
 
   const { writeContract, data: hash, error, isPending } = useWriteContract()
 
@@ -57,11 +58,67 @@ export function SmartContractIntegration({ contributionAmount, duration, onSucce
     hash,
   })
 
+  // Helper function to format error messages
+  const formatErrorMessage = (error: any) => {
+    if (!error) return ""
+    
+    // Extract user-friendly message
+    let userMessage = error.message || "Transaction failed"
+    
+    // Handle common error patterns
+    if (userMessage.includes("User rejected")) {
+      return "Transaction was cancelled by user"
+    }
+    if (userMessage.includes("insufficient funds")) {
+      return "Insufficient funds for transaction"
+    }
+    if (userMessage.includes("gas")) {
+      return "Gas estimation failed - please try again"
+    }
+    
+    // Truncate very long messages
+    if (userMessage.length > 100) {
+      return userMessage.substring(0, 100) + "..."
+    }
+    
+    return userMessage
+  }
+
+  // Helper function to extract technical details
+  const getErrorDetails = (error: any) => {
+    if (!error) return null
+    
+    const details: { [key: string]: string } = {}
+    
+    // Extract request arguments if available
+    if (error.request) {
+      details["Request Arguments"] = JSON.stringify(error.request, null, 2)
+    }
+    
+    // Extract contract call details if available
+    if (error.contractCall) {
+      details["Contract Call"] = JSON.stringify(error.contractCall, null, 2)
+    }
+    
+    // Extract version info
+    if (error.version) {
+      details["Version"] = error.version
+    }
+    
+    // Extract any other technical details
+    if (error.cause) {
+      details["Cause"] = error.cause.toString()
+    }
+    
+    return Object.keys(details).length > 0 ? details : null
+  }
+
   const handleCreateGroup = async () => {
     if (!address || !contributionAmount || !duration) return
 
     try {
       setIsCreating(true)
+      setShowErrorDetails(false) // Reset error details when starting new transaction
 
       // Convert duration to seconds (mock conversion)
       const durationInSeconds =
@@ -119,7 +176,7 @@ export function SmartContractIntegration({ contributionAmount, duration, onSucce
       {/* Transaction Status */}
       {(isPending || isConfirming || isConfirmed || error) && (
         <Card className="bg-concordia-purple/20 border-concordia-light-purple/30 backdrop-blur-sm">
-          <CardContent className="p-4">
+          <CardContent className="p-4 max-h-96 overflow-y-auto">
             {isPending && (
               <div className="flex items-center space-x-3">
                 <Loader2 className="h-5 w-5 text-concordia-pink animate-spin" />
@@ -161,12 +218,46 @@ export function SmartContractIntegration({ contributionAmount, duration, onSucce
             )}
 
             {error && (
-              <div className="flex items-center space-x-3">
-                <AlertCircle className="h-5 w-5 text-red-400" />
-                <div>
-                  <div className="text-white font-semibold">{"Transaction Failed"}</div>
-                  <div className="text-white/70 text-sm">{error.message}</div>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-semibold">{"Transaction Failed"}</div>
+                    <div className="text-white/70 text-sm break-words leading-tight">
+                      {formatErrorMessage(error)}
+                    </div>
+                  </div>
                 </div>
+                
+                {/* Technical Details - Collapsible */}
+                {getErrorDetails(error) && (
+                  <div className="ml-8">
+                    <button
+                      onClick={() => setShowErrorDetails(!showErrorDetails)}
+                      className="flex items-center space-x-2 text-white/60 hover:text-white/80 text-xs transition-colors"
+                    >
+                      {showErrorDetails ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                      <span>{"Technical Details"}</span>
+                    </button>
+                    
+                    {showErrorDetails && (
+                      <div className="mt-2 space-y-2">
+                        {Object.entries(getErrorDetails(error)!).map(([key, value]) => (
+                          <div key={key} className="bg-red-500/10 border border-red-500/20 rounded p-3">
+                            <div className="text-red-400 font-medium text-xs mb-1">{key}</div>
+                            <div className="text-white/70 text-xs font-mono break-all leading-relaxed max-h-32 overflow-y-auto">
+                              {value}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
