@@ -2,10 +2,18 @@
 
 A revolutionary decentralized application that enables friends to save money together using blockchain technology and BNB Greenfield for permanent data storage.
 
+---
+
+**⚠️ Note:**
+
+> **Hybrid Storage:** Concordia uses a **hybrid storage system**. Group data is stored in BNB Greenfield (simulated via localStorage for local development), with local metadata for fast access and as a fallback. See [`HYBRID_STORAGE.md`](./HYBRID_STORAGE.md) and [`GREENFIELD_STATUS.md`](./GREENFIELD_STATUS.md) for details and migration status.
+
+---
+
 ## ✨ Features
 
 - **🔗 Blockchain Integration**: Smart contracts on opBNB Testnet
-- **🗂️ Permanent Storage**: All data stored in BNB Greenfield buckets
+- **🗂️ Hybrid Storage**: Group data is stored in BNB Greenfield (simulated via localStorage in dev), with local metadata for fast access and fallback
 - **👥 Team Collaboration**: Multiple members can join and contribute
 - **🎯 Goal Tracking**: Visual progress tracking and milestone celebrations
 - **🏆 Aura Points System**: Gamified contribution rewards
@@ -19,7 +27,7 @@ A revolutionary decentralized application that enables friends to save money tog
 
 1. **Node.js 18+** and **npm**
 2. **MetaMask** wallet with opBNB Testnet configured
-3. **BNB Greenfield** account and API keys
+3. **BNB Greenfield** account and API keys (for production)
 4. **Vercel** account for deployment
 
 ### 1. Clone and Setup
@@ -38,7 +46,7 @@ Create `.env.local` file:
 # Smart Contract
 NEXT_PUBLIC_CONTRACT_ADDRESS=your_deployed_contract_address
 
-# BNB Greenfield
+# BNB Greenfield (required for production, simulated in dev)
 GREENFIELD_ACCESS_KEY=your_greenfield_access_key
 GREENFIELD_SECRET_KEY=your_greenfield_secret_key
 GREENFIELD_BUCKET_NAME=concordia-data
@@ -75,7 +83,7 @@ Add all environment variables from `.env.local` to your Vercel project settings.
 
 ### Backend (API Routes)
 - **Next.js API Routes** for serverless functions
-- **BNB Greenfield SDK** for decentralized storage
+- **Hybrid Storage Service**: Handles group data using BNB Greenfield (simulated via localStorage in dev) and local metadata
 - **Express.js** patterns for API design
 
 ### Blockchain
@@ -84,16 +92,18 @@ Add all environment variables from `.env.local` to your Vercel project settings.
 - **opBNB Testnet** for testing
 
 ### Storage
-- **BNB Greenfield** for permanent data storage
+- **Hybrid Storage**: BNB Greenfield for permanent data (simulated in dev), localStorage for metadata and fallback
 - **Public read access** for team members
 - **Metadata hashing** for data integrity
+
+> See [`HYBRID_STORAGE.md`](./HYBRID_STORAGE.md) and [`GREENFIELD_STATUS.md`](./GREENFIELD_STATUS.md) for more details.
 
 ## 📊 Data Flow
 
 ```
-User Action → Frontend → API Route → BNB Greenfield → Blockchain
+User Action → Frontend → Hybrid Storage Service → BNB Greenfield (simulated/localStorage fallback)
      ↓
-Dashboard ← API Route ← BNB Greenfield ← Smart Contract Event
+Dashboard ← Hybrid Storage Service ← BNB Greenfield (simulated/localStorage) ← Smart Contract Event
 ```
 
 ## 🔧 Development
@@ -143,10 +153,10 @@ The app is configured for seamless Vercel deployment:
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `NEXT_PUBLIC_CONTRACT_ADDRESS` | Deployed smart contract address | ✅ |
-| `GREENFIELD_ACCESS_KEY` | BNB Greenfield access key | ✅ |
-| `GREENFIELD_SECRET_KEY` | BNB Greenfield secret key | ✅ |
-| `GREENFIELD_BUCKET_NAME` | Greenfield bucket name | ✅ |
-| `GREENFIELD_ENDPOINT` | Greenfield API endpoint | ✅ |
+| `GREENFIELD_ACCESS_KEY` | BNB Greenfield access key | ✅ (prod) |
+| `GREENFIELD_SECRET_KEY` | BNB Greenfield secret key | ✅ (prod) |
+| `GREENFIELD_BUCKET_NAME` | Greenfield bucket name | ✅ (prod) |
+| `GREENFIELD_ENDPOINT` | Greenfield API endpoint | ✅ (prod) |
 
 ## 👥 Team Member Access
 
@@ -198,7 +208,7 @@ The app is configured for seamless Vercel deployment:
    - Redeploy after adding variables
 
 2. **Greenfield Connection Issues**
-   - Verify API keys are correct
+   - Verify API keys are correct (for production)
    - Check bucket permissions
    - Ensure endpoint is accessible
 
@@ -209,7 +219,7 @@ The app is configured for seamless Vercel deployment:
 
 ### Support
 
-- **Documentation**: Check `VERCEL_DEPLOYMENT.md`
+- **Documentation**: Check `VERCEL_DEPLOYMENT.md`, [`HYBRID_STORAGE.md`](./HYBRID_STORAGE.md), [`GREENFIELD_STATUS.md`](./GREENFIELD_STATUS.md)
 - **Issues**: Create GitHub issue
 - **Community**: Join our Discord
 
@@ -237,10 +247,17 @@ MIT License - see LICENSE file for details
 
 Your Concordia DApp is now ready for production deployment with:
 
-- ✅ **Permanent BNB Greenfield Storage**
+- ✅ **Hybrid BNB Greenfield + LocalStorage Storage**
 - ✅ **Public Vercel Deployment**
 - ✅ **Team Member Access**
 - ✅ **No Data Loss Guarantee**
 - ✅ **Blockchain Security**
 
 Start saving together with your team! 🎯 
+
+---
+
+## 📚 Further Reading on Storage & Migration
+
+- [Hybrid Storage Implementation](./HYBRID_STORAGE.md): Details on how hybrid (Greenfield + localStorage) storage works in Concordia.
+- [Greenfield Migration Status](./GREENFIELD_STATUS.md): Up-to-date status and guidance on the migration to BNB Greenfield storage. 
