@@ -5,6 +5,8 @@ const { ethers } = require("ethers")
 const multer = require("multer")
 const crypto = require("crypto")
 require("dotenv").config()
+const nodemailer = require("nodemailer");
+const { OpenAI } = require("openai");
 
 const app = express()
 const PORT = process.env.PORT || 3002
@@ -12,7 +14,7 @@ const PORT = process.env.PORT || 3002
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: process.env.FRONTEND_URL || "https://concordia-production.up.railway.app",
     credentials: true,
   }),
 )
@@ -98,9 +100,82 @@ function generateObjectId() {
   return crypto.randomBytes(16).toString("hex")
 }
 
+function generateInviteCode() {
+  // Generate a 6-character alphanumeric code
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let result = ''
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
 function sanitizeFileName(fileName) {
   return fileName.replace(/[^a-zA-Z0-9.-]/g, "_")
 }
+
+// Configure nodemailer (example with Gmail SMTP)
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.NOTIFY_EMAIL, // set in .env
+    pass: process.env.NOTIFY_EMAIL_PASS, // set in .env
+  },
+});
+
+// Configure OpenAI
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Helper to generate AI message
+async function generateAIDueDateMessage(memberName, groupName, dueDate) {
+  const prompt = `Write a friendly reminder email for ${memberName} that their payment is due for the group savings \"${groupName}\" on ${dueDate}.`;
+  const completion = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 120,
+  });
+  return completion.choices[0].message.content;
+}
+
+// Endpoint to send due date notifications
+app.post("/api/notify-due-date", async (req, res) => {
+  const { groupId } = req.body;
+  if (!groupId) return res.status(400).json({ error: "groupId required" });
+
+  try {
+    // Fetch group data from Greenfield
+    const objectName = `groups/group_${groupId}.json`;
+    const objectData = await greenfieldClient.object.downloadFile({
+      bucketName: GREENFIELD_CONFIG.bucketName,
+      objectName,
+    });
+    const group = JSON.parse(objectData.toString());
+
+    // For each member with an email, send notification
+    for (const member of group.members) {
+      if (member.email) {
+        // Generate AI message
+        const message = await generateAIDueDateMessage(
+          member.nickname,
+          group.name,
+          group.nextContribution // or due date
+        );
+
+        // Send email
+        await transporter.sendMail({
+          from: process.env.NOTIFY_EMAIL,
+          to: member.email,
+          subject: `Payment Due Reminder: ${group.name}`,
+          text: message,
+        });
+      }
+    }
+    res.json({ success: true, message: "Notifications sent" });
+  } catch (error) {
+    console.error("Error sending due date notifications:", error);
+    res.status(500).json({ error: "Failed to send notifications", details: error.message });
+  }
+});
 
 // API Routes
 
@@ -136,6 +211,7 @@ app.post("/api/groups/store", async (req, res) => {
     const metadata = {
       groupId,
       ...groupData,
+      inviteCode: generateInviteCode(), // Generate invite code
       createdAt: new Date().toISOString(),
       objectId,
       version: "1.0",
@@ -268,6 +344,58 @@ app.get("/api/groups/:groupId", async (req, res) => {
 
     res.status(500).json({
       error: "Failed to retrieve group data",
+      details: error.message,
+    })
+  }
+})
+
+/**
+ * Find Group by Code
+ */
+app.get("/api/groups/code/:code", async (req, res) => {
+  try {
+    const { code } = req.params
+    
+    // List all objects in the groups folder
+    const listObjectsResponse = await greenfieldClient.object.listObjects({
+      bucketName: GREENFIELD_CONFIG.bucketName,
+      prefix: "groups/",
+      maxKeys: 1000,
+    })
+
+    if (!listObjectsResponse.objects || listObjectsResponse.objects.length === 0) {
+      return res.status(404).json({ error: "No groups found" })
+    }
+
+    // Search through all groups for the code
+    for (const object of listObjectsResponse.objects) {
+      try {
+        const objectData = await greenfieldClient.object.downloadFile({
+          bucketName: GREENFIELD_CONFIG.bucketName,
+          objectName: object.objectName,
+        })
+
+        const groupData = JSON.parse(objectData.toString())
+        
+        // Check if this group has the code
+        if (groupData.inviteCode === code || groupData.code === code) {
+          const groupId = groupData.id || groupData.groupId
+          return res.json({
+            success: true,
+            groupId,
+            group: groupData
+          })
+        }
+      } catch (error) {
+        console.error(`Error checking group ${object.objectName}:`, error)
+      }
+    }
+
+    res.status(404).json({ error: "Group not found with this code" })
+  } catch (error) {
+    console.error("❌ Error finding group by code:", error)
+    res.status(500).json({
+      error: "Failed to find group by code",
       details: error.message,
     })
   }

@@ -20,7 +20,7 @@ const CONTRIBUTION_ABI = [
   },
 ] as const
 
-const CONCORDIA_CONTRACT_ADDRESS = "0x1234567890123456789012345678901234567890" as const
+const CONCORDIA_CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x58ae7520F81DC3464574960B792D43A82BF0C3f1") as `0x${string}`
 
 interface ContributionModalProps {
   isOpen: boolean
@@ -278,22 +278,6 @@ export function ContributionModal({ isOpen, onClose, group, onSuccess }: Contrib
 async function updateContributionInGreenfield(groupId: string, contributionData: any): Promise<void> {
   try {
     console.log("Updating contribution in BNB Greenfield:", { groupId, contributionData })
-
-    // Get existing group data
-    const storedReferences = JSON.parse(localStorage.getItem("greenfield_references") || "{}")
-    const reference = storedReferences[groupId]
-
-    if (reference) {
-      // Update contribution history
-      const contributionHistory = JSON.parse(localStorage.getItem(`contributions_${groupId}`) || "[]")
-      contributionHistory.push(contributionData)
-      localStorage.setItem(`contributions_${groupId}`, JSON.stringify(contributionHistory))
-
-      // Update reference timestamp
-      reference.lastUpdated = new Date().toISOString()
-      storedReferences[groupId] = reference
-      localStorage.setItem("greenfield_references", JSON.stringify(storedReferences))
-    }
 
     // Mock API delay
     await new Promise((resolve) => setTimeout(resolve, 1500))
